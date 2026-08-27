@@ -1,11 +1,32 @@
 import React, { useState } from 'react';
-import { Zap, Filter, Search, ShieldCheck, ShieldAlert, AlertTriangle, ShieldX, Eye, ArrowUpRight, Check, X, Info } from 'lucide-react';
+import { Zap, Search, Eye, Check } from 'lucide-react';
+
+// ── Helpers ───────────────────────────────────────────────────────────
+
+function decisionBadgeClass(decision) {
+  switch (decision) {
+    case 'ALLOW':   return 'pg-badge-allow';
+    case 'STEP-UP': return 'pg-badge-stepup';
+    case 'REVIEW':  return 'pg-badge-review';
+    case 'BLOCK':   return 'pg-badge-block';
+    default:        return 'pg-badge bg-surface-overlay text-ink-secondary border-surface-border';
+  }
+}
+
+function riskColor(score) {
+  if (score < 30) return 'text-guard-allow';
+  if (score < 60) return 'text-guard-stepup';
+  if (score < 80) return 'text-guard-review';
+  return 'text-guard-block';
+}
+
+const FILTER_OPTIONS = ['ALL', 'ALLOW', 'STEP-UP', 'REVIEW', 'BLOCK'];
 
 export default function LiveTransactions({ transactions, onOverrideDecision, onOpenDetail }) {
   const [filterDecision, setFilterDecision] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filtered = transactions.filter(t => {
+  const filtered = transactions.filter((t) => {
     if (filterDecision !== 'ALL' && t.decision !== filterDecision) return false;
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
@@ -18,134 +39,163 @@ export default function LiveTransactions({ transactions, onOverrideDecision, onO
     return true;
   });
 
-  const getBadgeStyle = (decision) => {
-    switch (decision) {
-      case 'ALLOW': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
-      case 'STEP-UP': return 'bg-amber-500/20 text-amber-400 border-amber-500/40';
-      case 'REVIEW': return 'bg-purple-500/20 text-purple-400 border-purple-500/40';
-      case 'BLOCK': return 'bg-rose-500/20 text-rose-400 border-rose-500/40';
-      default: return 'bg-slate-800 text-slate-300';
-    }
-  };
-
-  const getRiskColor = (score) => {
-    if (score < 30) return 'text-emerald-400';
-    if (score < 60) return 'text-amber-400';
-    if (score < 80) return 'text-purple-400';
-    return 'text-rose-400';
-  };
-
   return (
-    <div className="space-y-6">
-      
-      {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 glass-panel p-4 rounded-xl">
-        <div className="flex items-center gap-2">
-          <Zap className="w-5 h-5 text-cyan-400" />
-          <h2 className="text-lg font-bold text-white">Live Intercept Feed</h2>
-          <span className="px-2 py-0.5 text-xs bg-slate-800 text-slate-400 rounded-full font-mono">
-            {filtered.length} captured
-          </span>
-        </div>
+    <div className="space-y-5">
 
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search merchant, agent, item..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700/80 rounded-lg pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
-            />
+      {/* ── Header & Controls ── */}
+      <div className="pg-surface p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
+          {/* Title */}
+          <div className="flex items-center gap-2.5">
+            <Zap className="w-4 h-4 text-brand-accent shrink-0" />
+            <h2 className="text-base font-bold text-ink-primary">Live Intercept Feed</h2>
+            <span className="px-2 py-0.5 text-[10px] font-mono font-semibold bg-surface-overlay text-ink-muted rounded border border-surface-border/50">
+              {filtered.length}
+            </span>
           </div>
 
-          <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800 text-xs">
-            {['ALL', 'ALLOW', 'STEP-UP', 'REVIEW', 'BLOCK'].map((d) => (
-              <button
-                key={d}
-                onClick={() => setFilterDecision(d)}
-                className={`px-2.5 py-1 rounded font-mono font-medium transition-all ${
-                  filterDecision === d
-                    ? 'bg-indigo-600 text-white shadow'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {d}
-              </button>
-            ))}
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Search */}
+            <div className="relative flex-1 sm:flex-none sm:w-56">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search agent, merchant…"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pg-input pl-8 py-1.5 text-xs"
+              />
+            </div>
+
+            {/* Decision filter pills */}
+            <div className="flex items-center gap-0.5 bg-surface-raised shadow-neo-sm rounded-neo border border-surface-border/50 p-1">
+              {FILTER_OPTIONS.map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setFilterDecision(d)}
+                  className={[
+                    'px-2.5 py-1 rounded-[7px] text-[11px] font-mono font-semibold',
+                    'transition-neo duration-neo select-none',
+                    'focus-visible:outline-none focus-visible:shadow-neo-focus',
+                    'active:shadow-neo-pressed active:translate-y-px',
+                    filterDecision === d
+                      ? 'bg-brand text-white shadow-neo-brand'
+                      : 'text-ink-muted hover:text-ink-primary hover:bg-surface-overlay',
+                  ].join(' ')}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Intercept Stream Table */}
-      <div className="glass-panel rounded-xl overflow-hidden border border-slate-800">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/90 text-slate-400 font-mono uppercase tracking-wider border-b border-slate-800">
-              <tr>
-                <th className="py-3.5 px-4">Time & ID</th>
-                <th className="py-3.5 px-4">Agent Name</th>
-                <th className="py-3.5 px-4">Merchant & Category</th>
-                <th className="py-3.5 px-4">Amount</th>
-                <th className="py-3.5 px-4 text-center">Risk Score</th>
-                <th className="py-3.5 px-4 text-center">Decision</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
+      {/* ── Intercept Table ── */}
+      <div className="pg-surface overflow-hidden">
+        <div className="overflow-x-auto scrollbar-stable">
+          <table className="w-full text-left min-w-[700px]">
+            <thead className="bg-surface-overlay border-b border-surface-border/60">
+              <tr className="text-[10px] font-mono font-bold text-ink-muted uppercase tracking-widest">
+                <th className="py-3 px-4">Time / ID</th>
+                <th className="py-3 px-4">Agent</th>
+                <th className="py-3 px-4">Merchant</th>
+                <th className="py-3 px-4">Amount</th>
+                <th className="py-3 px-4 text-center">Risk</th>
+                <th className="py-3 px-4 text-center">Decision</th>
+                <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 font-sans">
+            <tbody className="divide-y divide-surface-border/40 font-sans">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="py-8 text-center text-slate-500 font-mono">
-                    No intercepted payment events match current filter.
+                  <td colSpan={7} className="py-12 text-center">
+                    <div className="space-y-2">
+                      <Zap className="w-6 h-6 text-ink-subtle mx-auto" />
+                      <p className="text-sm text-ink-muted font-mono">
+                        No intercepted events match the current filter.
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 filtered.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="py-3.5 px-4 font-mono text-slate-400">
-                      <div>{new Date(tx.created_at).toLocaleTimeString()}</div>
-                      <div className="text-[10px] text-slate-600">{tx.id}</div>
-                    </td>
-                    <td className="py-3.5 px-4 font-medium text-white">
-                      {tx.agent_name}
-                      <span className="block text-[10px] text-slate-400 font-mono">{tx.agent_id}</span>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="font-semibold text-slate-200">{tx.merchant}</div>
-                      <div className="text-[10px] text-slate-400">{tx.description}</div>
-                    </td>
-                    <td className="py-3.5 px-4 font-mono font-bold text-white">
-                      ₹{tx.amount.toLocaleString()}
-                    </td>
-                    <td className="py-3.5 px-4 text-center">
-                      <div className={`font-mono font-bold text-sm ${getRiskColor(tx.risk_score)}`}>
-                        {tx.risk_score} <span className="text-[10px] text-slate-500">/100</span>
+                  <tr
+                    key={tx.id}
+                    className="hover:bg-surface-overlay/50 transition-colors duration-100"
+                  >
+                    {/* Time + ID */}
+                    <td className="py-3.5 px-4 font-mono">
+                      <div className="text-xs text-ink-secondary">
+                        {new Date(tx.created_at).toLocaleTimeString()}
                       </div>
+                      <div className="text-[10px] text-ink-subtle mt-0.5">{tx.id}</div>
                     </td>
+
+                    {/* Agent */}
+                    <td className="py-3.5 px-4">
+                      <div className="text-xs font-semibold text-ink-primary">{tx.agent_name}</div>
+                      <div className="text-[10px] text-ink-muted font-mono mt-0.5">{tx.agent_id}</div>
+                    </td>
+
+                    {/* Merchant */}
+                    <td className="py-3.5 px-4">
+                      <div className="text-xs font-semibold text-ink-primary">{tx.merchant}</div>
+                      <div className="text-[10px] text-ink-secondary mt-0.5">{tx.description}</div>
+                    </td>
+
+                    {/* Amount */}
+                    <td className="py-3.5 px-4 font-mono">
+                      <span className="text-sm font-bold text-ink-primary">
+                        ₹{tx.amount.toLocaleString()}
+                      </span>
+                    </td>
+
+                    {/* Risk Score */}
+                    <td className="py-3.5 px-4 text-center font-mono">
+                      <span className={`text-sm font-bold ${riskColor(tx.risk_score)}`}>
+                        {tx.risk_score}
+                      </span>
+                      <span className="text-[10px] text-ink-subtle"> /100</span>
+                    </td>
+
+                    {/* Decision */}
                     <td className="py-3.5 px-4 text-center">
-                      <span className={`inline-block px-2.5 py-1 rounded border text-[11px] font-bold font-mono ${getBadgeStyle(tx.decision)}`}>
+                      <span className={`pg-badge ${decisionBadgeClass(tx.decision)}`}>
                         {tx.decision}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-right space-x-2">
-                      <button
-                        onClick={() => onOpenDetail(tx)}
-                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 font-mono text-[11px] inline-flex items-center gap-1 transition-colors"
-                      >
-                        <Eye className="w-3 h-3 text-cyan-400" /> Details
-                      </button>
 
-                      {tx.decision === 'BLOCK' && (
+                    {/* Actions */}
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center justify-end gap-1.5">
                         <button
-                          onClick={() => onOverrideDecision(tx.id, 'ALLOW')}
-                          className="px-2 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded border border-emerald-500/40 font-mono text-[11px] inline-flex items-center gap-1 transition-colors"
-                          title="Override block and approve transaction"
+                          onClick={() => onOpenDetail(tx)}
+                          className="pg-btn-ghost text-[11px] gap-1 py-1 px-2 font-mono"
                         >
-                          <Check className="w-3 h-3" /> Override
+                          <Eye className="w-3 h-3 text-brand-accent" />
+                          Details
                         </button>
-                      )}
+
+                        {tx.decision === 'BLOCK' && (
+                          <button
+                            onClick={() => onOverrideDecision(tx.id, 'ALLOW')}
+                            title="Override block and approve transaction"
+                            className="inline-flex items-center gap-1 px-2 py-1
+                                       bg-guard-allow/10 hover:bg-guard-allow/20
+                                       text-guard-allow rounded-neo border border-guard-allow/25
+                                       font-mono text-[11px] font-semibold
+                                       transition-neo duration-neo
+                                       active:shadow-neo-pressed
+                                       focus-visible:outline-none focus-visible:shadow-neo-focus"
+                          >
+                            <Check className="w-3 h-3" />
+                            Override
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

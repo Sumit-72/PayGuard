@@ -75,8 +75,8 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0B0F17] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white">
-      
+    <div className="min-h-screen flex flex-col bg-surface-base text-ink-primary font-sans">
+
       {/* Top Header Navbar */}
       <Header
         activeTab={activeTab}
@@ -89,8 +89,8 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-8 space-y-8">
-        
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
         {activeTab === 'overview' && (
           <OverviewDashboard
             transactions={transactions}
@@ -141,16 +141,17 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/80 bg-[#0B0F17] py-6 px-4 text-center text-xs text-slate-500 font-mono">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            PayGuard — Control-Plane Architecture for Autonomous Commerce
-          </div>
-          <div className="flex items-center gap-4 text-slate-400">
+      <footer className="border-t border-surface-border/60 py-5 px-4">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono text-ink-muted">
+          <span className="text-ink-secondary">
+            Pay<span className="text-brand-accent">Guard</span>
+            <span className="text-ink-muted ml-2">— Control-Plane for Autonomous Commerce</span>
+          </span>
+          <div className="flex items-center gap-3 text-ink-subtle">
             <span>Deterministic Policy Engine</span>
-            <span>•</span>
-            <span>AI Risk & Intent Drift</span>
-            <span>•</span>
+            <span>·</span>
+            <span>AI Risk &amp; Intent Drift</span>
+            <span>·</span>
             <span>Razorpay Integration</span>
           </div>
         </div>

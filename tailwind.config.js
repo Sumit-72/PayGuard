@@ -61,15 +61,18 @@ export default {
         // Inset — element is pressed into the surface
         'neo-inset-sm': 'inset 2px 2px 5px #080e19, inset -2px -2px 4px #1a2438',
         'neo-inset':    'inset 3px 3px 8px #080e19, inset -3px -3px 6px #1a2438',
-        // Pressed — active/clicked state
+        // Pressed — active/clicked state (deeper inset)
         'neo-pressed':  'inset 4px 4px 10px #080e19, inset -2px -2px 5px #1a2438',
         // Flat — flush with surface, minimal shadow
         'neo-flat':     '1px 1px 3px #080e19, -1px -1px 2px #1a2438',
-        // Status accent shadows (very subtle, not glowing)
-        'neo-brand':    '5px 5px 10px #080e19, -4px -4px 8px #1a2438, 0 0 0 1px rgba(79,110,247,0.15)',
-        'neo-allow':    '5px 5px 10px #080e19, -4px -4px 8px #1a2438, 0 0 0 1px rgba(16,185,129,0.15)',
-        'neo-block':    '5px 5px 10px #080e19, -4px -4px 8px #1a2438, 0 0 0 1px rgba(239,68,68,0.15)',
-        'neo-warn':     '5px 5px 10px #080e19, -4px -4px 8px #1a2438, 0 0 0 1px rgba(245,158,11,0.15)',
+        // Focus ring — accessible keyboard focus indicator
+        'neo-focus':    '0 0 0 2px #0f1623, 0 0 0 4px #4f6ef7',
+        // Status accent shadows (very subtle accent ring, not glowing)
+        'neo-brand':    '5px 5px 10px #080e19, -4px -4px 8px #1a2438, 0 0 0 1px rgba(79,110,247,0.18)',
+        'neo-allow':    '5px 5px 10px #080e19, -4px -4px 8px #1a2438, 0 0 0 1px rgba(16,185,129,0.18)',
+        'neo-block':    '5px 5px 10px #080e19, -4px -4px 8px #1a2438, 0 0 0 1px rgba(239,68,68,0.18)',
+        'neo-warn':     '5px 5px 10px #080e19, -4px -4px 8px #1a2438, 0 0 0 1px rgba(245,158,11,0.18)',
+        'neo-review':   '5px 5px 10px #080e19, -4px -4px 8px #1a2438, 0 0 0 1px rgba(139,92,246,0.18)',
       },
 
       // ── Border Radius ─────────────────────────────────────────────
@@ -88,6 +91,12 @@ export default {
       },
       transitionTimingFunction: {
         'neo': 'cubic-bezier(0.4, 0, 0.2, 1)',
+      },
+
+      // ── Spacing extras ────────────────────────────────────────────
+      spacing: {
+        '18': '4.5rem',
+        '22': '5.5rem',
       },
     },
   },

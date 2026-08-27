@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, ShieldCheck, CheckCircle2, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, X } from 'lucide-react';
 
 export default function StepUpModal({ transaction, onClose, onConfirm }) {
   const [otp, setOtp] = useState(['', '', '', '']);
@@ -13,11 +13,15 @@ export default function StepUpModal({ transaction, onClose, onConfirm }) {
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-
-    // Auto-focus next input
+    // Auto-advance focus
     if (value && index < 3) {
-      const nextInput = document.getElementById(`otp-input-${index + 1}`);
-      if (nextInput) nextInput.focus();
+      document.getElementById(`otp-input-${index + 1}`)?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      document.getElementById(`otp-input-${index - 1}`)?.focus();
     }
   };
 
@@ -34,69 +38,91 @@ export default function StepUpModal({ transaction, onClose, onConfirm }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
-        
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}
+    >
+      {/* Backdrop dismiss */}
+      <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
+
+      <div className="relative bg-surface-raised shadow-neo-lg border border-guard-stepup/25 rounded-neo-xl max-w-md w-full p-6 space-y-5">
+
+        {/* Close */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 text-slate-400 hover:text-white"
+          className="pg-btn-icon absolute right-4 top-4"
+          aria-label="Close"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
 
-        {/* Header Badge */}
+        {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-            <AlertTriangle className="w-6 h-6" />
+          <div className="w-11 h-11 rounded-neo bg-guard-stepup/10 border border-guard-stepup/25 shadow-neo-warn flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-5 h-5 text-guard-stepup" />
           </div>
           <div>
-            <span className="text-[10px] font-mono font-bold bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded border border-amber-500/30">
-              STEP-UP REQUIRED
-            </span>
-            <h3 className="text-lg font-bold text-white mt-1">Human Confirmation Prompt</h3>
+            <span className="pg-badge pg-badge-stepup">STEP-UP REQUIRED</span>
+            <h3 className="text-base font-bold text-ink-primary mt-1">Human Confirmation Prompt</h3>
           </div>
         </div>
 
         {/* Transaction Summary */}
-        <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs font-mono">
+        <div className="pg-inset p-4 rounded-neo space-y-2 text-xs font-mono">
           <div className="flex justify-between">
-            <span className="text-slate-400">Requested Amount:</span>
-            <span className="text-white font-bold">₹{transaction.amount?.toLocaleString()}</span>
+            <span className="text-ink-muted">Amount:</span>
+            <span className="text-ink-primary font-bold">₹{transaction.amount?.toLocaleString()}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400">Merchant:</span>
-            <span className="text-amber-400 font-bold">{transaction.merchant}</span>
+            <span className="text-ink-muted">Merchant:</span>
+            <span className="text-guard-stepup font-bold">{transaction.merchant}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400">Agent Stated Intent:</span>
-            <span className="text-slate-300 italic">"{transaction.intent_drift?.targetBudget ? `Budget ₹${transaction.intent_drift.targetBudget}` : 'Agent Task'}"</span>
+            <span className="text-ink-muted">Agent Intent:</span>
+            <span className="text-ink-secondary italic text-right max-w-[55%]">
+              "{transaction.intent_drift?.targetBudget
+                ? `Budget ₹${transaction.intent_drift.targetBudget.toLocaleString()}`
+                : 'Agent Task'}"
+            </span>
           </div>
         </div>
 
         {/* Reason for Step-Up */}
-        <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs space-y-1 font-mono">
-          <span className="font-bold block">Why confirmation is required:</span>
+        <div className="p-3 bg-guard-stepup/8 border border-guard-stepup/20 rounded-neo space-y-1.5 font-mono text-xs">
+          <span className="font-bold text-guard-stepup block text-[10px] uppercase tracking-wider">
+            Why confirmation is required
+          </span>
           {transaction.reasons?.map((r, i) => (
-            <div key={i}>• {r}</div>
+            <div key={i} className="text-guard-stepup/80">• {r}</div>
           ))}
         </div>
 
-        {/* OTP Input Simulation */}
+        {/* OTP or Confirmed State */}
         {!confirmed ? (
-          <div className="space-y-4 pt-2">
-            <label className="text-xs font-bold text-slate-300 block text-center uppercase tracking-wider font-mono">
-              Enter 4-Digit Security Authorization Code
+          <div className="space-y-4 pt-1">
+            <label className="text-[10px] font-bold font-mono text-ink-muted uppercase tracking-widest block text-center">
+              Enter 4-Digit Authorization Code
             </label>
+
             <div className="flex justify-center gap-3">
               {[0, 1, 2, 3].map((idx) => (
                 <input
                   key={idx}
                   id={`otp-input-${idx}`}
                   type="text"
+                  inputMode="numeric"
                   maxLength={1}
                   value={otp[idx]}
                   onChange={(e) => handleOtpChange(idx, e.target.value)}
-                  className="w-12 h-12 text-center text-xl font-bold bg-slate-950 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500 font-mono"
+                  onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                  className={[
+                    'w-12 h-12 text-center text-xl font-bold font-mono',
+                    'bg-surface-base shadow-neo-inset rounded-neo',
+                    'border border-surface-border/60',
+                    'text-ink-primary caret-guard-stepup',
+                    'transition-neo duration-neo',
+                    'focus:outline-none focus:border-guard-stepup/50 focus:shadow-neo-focus',
+                  ].join(' ')}
                 />
               ))}
             </div>
@@ -104,16 +130,27 @@ export default function StepUpModal({ transaction, onClose, onConfirm }) {
             <button
               onClick={handleApprove}
               disabled={isSubmitting}
-              className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-sm rounded-xl shadow-lg shadow-amber-500/20 font-mono transition-all"
+              className="pg-btn-warn w-full py-3 text-sm"
             >
-              {isSubmitting ? 'Verifying Code...' : 'Authorize Transaction'}
+              {isSubmitting ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-surface-base/30 border-t-surface-base rounded-full animate-spin" />
+                  Verifying Code…
+                </>
+              ) : (
+                'Authorize Transaction'
+              )}
             </button>
           </div>
         ) : (
-          <div className="py-6 text-center space-y-2 font-mono text-emerald-400">
-            <CheckCircle2 className="w-10 h-10 mx-auto animate-bounce" />
-            <div className="font-bold text-sm">Step-Up Authorization Granted!</div>
-            <div className="text-xs text-slate-400">Forwarding charge to Razorpay gateway...</div>
+          <div className="py-6 text-center space-y-2">
+            <CheckCircle2 className="w-10 h-10 text-guard-allow mx-auto" />
+            <div className="font-bold text-sm text-guard-allow font-mono">
+              Authorization Granted
+            </div>
+            <div className="text-xs text-ink-muted font-mono">
+              Forwarding charge to Razorpay gateway…
+            </div>
           </div>
         )}
 

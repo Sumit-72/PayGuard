@@ -1,7 +1,17 @@
 import React, { useState } from 'react';
-import { PlayCircle, ShieldCheck, ShieldAlert, AlertTriangle, ShieldX, ArrowRight, Zap, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { PlayCircle, Zap, CheckCircle2 } from 'lucide-react';
 import { predefinedScenarios } from '../data/scenarios';
 import { payguard } from '../engine/payguardSDK';
+
+function decisionBadgeClass(decision) {
+  switch (decision) {
+    case 'ALLOW':   return 'pg-badge-allow';
+    case 'STEP-UP': return 'pg-badge-stepup';
+    case 'REVIEW':  return 'pg-badge-review';
+    case 'BLOCK':   return 'pg-badge-block';
+    default:        return 'pg-badge bg-surface-overlay text-ink-secondary border-surface-border';
+  }
+}
 
 export default function AgentSimulator({ policy, agents, onNewTransaction, onRequestStepUp }) {
   const [selectedScenario, setSelectedScenario] = useState(predefinedScenarios[0]);
@@ -23,32 +33,20 @@ export default function AgentSimulator({ policy, agents, onNewTransaction, onReq
     setIsExecuting(true);
     setLastResult(null);
 
-    const targetAgent = agents.find(a => a.id === selectedScenario.agent_id) || agents[0];
+    const targetAgent = agents.find((a) => a.id === selectedScenario.agent_id) || agents[0];
     const payment = {
-      amount: customAmount ? Number(customAmount) : selectedScenario.payment_request.amount,
-      merchant: customMerchant || selectedScenario.payment_request.merchant,
-      category: selectedScenario.payment_request.category,
-      description: customDescription || selectedScenario.payment_request.description
+      amount:      customAmount ? Number(customAmount) : selectedScenario.payment_request.amount,
+      merchant:    customMerchant || selectedScenario.payment_request.merchant,
+      category:    selectedScenario.payment_request.category,
+      description: customDescription || selectedScenario.payment_request.description,
     };
-
     const intent = targetAgent.active_intent;
 
-    // Simulate Firewall Evaluation latency
     setTimeout(async () => {
-      const response = await payguard.authorize({
-        agent: targetAgent,
-        policy,
-        intent,
-        payment
-      });
-
+      const response = await payguard.authorize({ agent: targetAgent, policy, intent, payment });
       setIsExecuting(false);
       setLastResult(response);
-
-      // Record transaction into live feed
       onNewTransaction(response.rawResult);
-
-      // If STEP-UP, trigger interactive confirmation modal
       if (response.decision === 'STEP-UP') {
         onRequestStepUp(response.rawResult);
       }
@@ -56,102 +54,114 @@ export default function AgentSimulator({ policy, agents, onNewTransaction, onReq
   };
 
   return (
-    <div className="space-y-6">
-      
-      {/* Header */}
-      <div className="glass-panel p-5 rounded-xl space-y-2">
-        <div className="flex items-center gap-2">
-          <PlayCircle className="w-5 h-5 text-cyan-400" />
-          <h2 className="text-lg font-bold text-white">Interactive Agent Scenario Lab</h2>
+    <div className="space-y-5">
+
+      {/* ── Header ── */}
+      <div className="pg-surface p-5">
+        <div className="flex items-center gap-2.5 mb-2">
+          <PlayCircle className="w-4 h-4 text-brand-accent shrink-0" />
+          <h2 className="text-base font-bold text-ink-primary">Interactive Scenario Lab</h2>
         </div>
-        <p className="text-xs text-slate-300">
-          Simulate real agent payment requests to observe how PayGuard evaluates intent drift, hard policy rules, and retry storm anomalies in real-time.
+        <p className="text-xs text-ink-secondary leading-relaxed">
+          Simulate real agent payment requests to observe how PayGuard evaluates intent drift, hard policy violations,
+          and anomaly detection in real-time.
         </p>
       </div>
 
-      {/* Scenario Selector Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ── Scenario Selector ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {predefinedScenarios.map((sc) => {
           const isSelected = selectedScenario.id === sc.id;
           return (
             <button
               key={sc.id}
               onClick={() => handleSelectScenario(sc)}
-              className={`text-left p-4 rounded-xl border transition-all ${
+              className={[
+                'text-left p-4 rounded-neo-lg border transition-neo duration-neo',
+                'focus-visible:outline-none focus-visible:shadow-neo-focus',
+                'active:shadow-neo-pressed active:translate-y-px select-none',
                 isSelected
-                  ? 'bg-indigo-950/80 border-indigo-500 shadow-glow-indigo'
-                  : 'glass-card border-slate-800 hover:border-slate-700'
-              }`}
+                  ? 'bg-brand/8 border-brand/30 shadow-neo-brand'
+                  : 'pg-surface hover:border-surface-border hover:bg-surface-overlay',
+              ].join(' ')}
             >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-brand/10 text-brand border border-brand/20 tracking-wider uppercase">
                   {sc.badge}
                 </span>
-                <span className="text-[10px] text-slate-400 font-mono">{sc.subtitle}</span>
+                <span className="text-[10px] text-ink-muted font-mono">{sc.subtitle}</span>
               </div>
-              <h3 className="font-bold text-xs text-white mb-1">{sc.title}</h3>
-              <p className="text-[11px] text-slate-400 line-clamp-2">{sc.description}</p>
+              <h3 className={`font-bold text-xs mb-1.5 ${isSelected ? 'text-brand' : 'text-ink-primary'}`}>
+                {sc.title}
+              </h3>
+              <p className="text-[11px] text-ink-secondary leading-snug line-clamp-2">{sc.description}</p>
             </button>
           );
         })}
       </div>
 
-      {/* Scenario Execution Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Scenario Details & Parameter Controls */}
-        <div className="glass-panel p-5 rounded-xl space-y-4">
+      {/* ── Execution Panel ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        {/* Left: Parameters */}
+        <div className="pg-surface p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-              Selected Test Parameters
-            </h3>
-            <span className="text-xs text-cyan-400 font-mono font-bold">{selectedScenario.title}</span>
+            <h3 className="text-xs font-bold text-ink-primary uppercase tracking-wider">Test Parameters</h3>
+            <span className="text-xs text-brand-accent font-mono font-semibold">{selectedScenario.title}</span>
           </div>
 
-          <div className="bg-slate-900/90 p-3 rounded-lg border border-slate-800 space-y-2 text-xs">
-            <div className="flex justify-between">
-              <span className="text-slate-400">Agent:</span>
-              <span className="text-white font-mono font-bold">{selectedScenario.agent_name}</span>
+          {/* Scenario context */}
+          <div className="pg-inset p-3 rounded-neo space-y-2 text-xs">
+            <div className="flex justify-between gap-4">
+              <span className="text-ink-muted shrink-0">Agent:</span>
+              <span className="text-ink-primary font-mono font-semibold text-right">{selectedScenario.agent_name}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">User Intent:</span>
-              <span className="text-cyan-400 font-mono italic">"{selectedScenario.stated_intent}"</span>
+            <div className="flex justify-between gap-4">
+              <span className="text-ink-muted shrink-0">Intent:</span>
+              <span className="text-brand-accent font-mono italic text-right">"{selectedScenario.stated_intent}"</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Why Gateways Fail:</span>
-              <span className="text-slate-300 text-[11px] max-w-xs text-right">{selectedScenario.why_gateways_fail}</span>
+            <div className="flex flex-col gap-1 pt-1 border-t border-surface-border/40">
+              <span className="text-ink-muted text-[10px]">Why gateways fail here:</span>
+              <span className="text-ink-secondary text-[11px] leading-snug">{selectedScenario.why_gateways_fail}</span>
             </div>
           </div>
 
-          <div className="space-y-3 pt-2">
+          {/* Custom overrides */}
+          <div className="space-y-3">
             <div>
-              <label className="text-[10px] text-slate-400 block mb-1">Requested Amount (₹)</label>
+              <label className="text-[10px] text-ink-muted font-mono block mb-1 uppercase tracking-wide">
+                Amount (₹) — Default: ₹{selectedScenario.payment_request.amount.toLocaleString()}
+              </label>
               <input
                 type="number"
-                placeholder={`Default: ₹${selectedScenario.payment_request.amount.toLocaleString()}`}
+                placeholder={`₹${selectedScenario.payment_request.amount.toLocaleString()}`}
                 value={customAmount}
                 onChange={(e) => setCustomAmount(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white font-mono"
+                className="pg-input-mono text-xs"
               />
             </div>
             <div>
-              <label className="text-[10px] text-slate-400 block mb-1">Merchant Name</label>
+              <label className="text-[10px] text-ink-muted font-mono block mb-1 uppercase tracking-wide">
+                Merchant — Default: {selectedScenario.payment_request.merchant}
+              </label>
               <input
                 type="text"
-                placeholder={`Default: ${selectedScenario.payment_request.merchant}`}
+                placeholder={selectedScenario.payment_request.merchant}
                 value={customMerchant}
                 onChange={(e) => setCustomMerchant(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white font-mono"
+                className="pg-input-mono text-xs"
               />
             </div>
             <div>
-              <label className="text-[10px] text-slate-400 block mb-1">Item Description</label>
+              <label className="text-[10px] text-ink-muted font-mono block mb-1 uppercase tracking-wide">
+                Description
+              </label>
               <input
                 type="text"
-                placeholder={`Default: ${selectedScenario.payment_request.description}`}
+                placeholder={selectedScenario.payment_request.description}
                 value={customDescription}
                 onChange={(e) => setCustomDescription(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white font-mono"
+                className="pg-input-mono text-xs"
               />
             </div>
           </div>
@@ -159,89 +169,105 @@ export default function AgentSimulator({ policy, agents, onNewTransaction, onReq
           <button
             onClick={handleRunSimulation}
             disabled={isExecuting}
-            className="w-full py-3 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all font-mono"
+            className="pg-btn-primary w-full py-2.5 text-xs"
           >
             {isExecuting ? (
-              <span>Evaluating through PayGuard Engine...</span>
+              <>
+                <span className="w-3.5 h-3.5 border border-white/40 border-t-white rounded-full animate-spin" />
+                Evaluating through PayGuard Engine…
+              </>
             ) : (
               <>
-                <Zap className="w-4 h-4" /> Intercept & Authorize Agent Request
+                <Zap className="w-3.5 h-3.5" />
+                Intercept &amp; Authorize Request
               </>
             )}
           </button>
         </div>
 
-        {/* Live Evaluation Output */}
-        <div className="glass-panel p-5 rounded-xl space-y-4">
-          <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center justify-between">
-            <span>PayGuard Firewall Output</span>
-            {lastResult && <span className="text-[10px] font-mono text-emerald-400">{lastResult.latency_ms} ms</span>}
-          </h3>
+        {/* Right: Output */}
+        <div className="pg-surface p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold text-ink-primary uppercase tracking-wider">Firewall Output</h3>
+            {lastResult && (
+              <span className="text-[10px] font-mono text-guard-allow">
+                {lastResult.latency_ms} ms
+              </span>
+            )}
+          </div>
 
+          {/* Empty state */}
           {!lastResult && !isExecuting && (
-            <div className="py-16 text-center text-slate-500 font-mono text-xs border border-dashed border-slate-800 rounded-xl">
-              Click 'Intercept & Authorize' to run scenario through Policy + Risk + Context Engine.
+            <div className="pg-inset rounded-neo-lg py-14 text-center">
+              <PlayCircle className="w-7 h-7 text-ink-subtle mx-auto mb-3" />
+              <p className="text-xs text-ink-muted font-mono">
+                Run a scenario to see the firewall evaluation.
+              </p>
             </div>
           )}
 
+          {/* Loading */}
           {isExecuting && (
-            <div className="py-16 text-center space-y-3 font-mono text-xs">
-              <div className="inline-block w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-indigo-300">Checking Hard Policy Rules → Calculating Intent Drift → Risk Score...</p>
+            <div className="pg-inset rounded-neo-lg py-14 text-center space-y-3">
+              <div className="w-8 h-8 border-2 border-brand/30 border-t-brand rounded-full animate-spin mx-auto" />
+              <p className="text-xs text-brand font-mono">
+                Policy Check → Intent Drift → Risk Score…
+              </p>
             </div>
           )}
 
+          {/* Results */}
           {lastResult && !isExecuting && (
-            <div className="space-y-4 font-mono text-xs">
-              
-              {/* Decision Badge */}
-              <div className="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-slate-800">
-                <span className="text-slate-400">Final Decision:</span>
-                <span className={`px-3 py-1 rounded text-sm font-bold border ${
-                  lastResult.decision === 'ALLOW' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' :
-                  lastResult.decision === 'STEP-UP' ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' :
-                  lastResult.decision === 'REVIEW' ? 'bg-purple-500/20 text-purple-400 border-purple-500/40' :
-                  'bg-rose-500/20 text-rose-400 border-rose-500/40'
-                }`}>
+            <div className="space-y-3 font-mono text-xs">
+
+              {/* Decision */}
+              <div className="pg-inset p-3 rounded-neo flex items-center justify-between">
+                <span className="text-ink-muted uppercase tracking-wider text-[10px]">Final Decision</span>
+                <span className={`pg-badge text-sm ${decisionBadgeClass(lastResult.decision)}`}>
                   {lastResult.decision}
                 </span>
               </div>
 
-              {/* Risk Score & Latency */}
-              <div className="grid grid-cols-2 gap-2 text-center">
-                <div className="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
-                  <span className="text-[10px] text-slate-500 block">RISK SCORE</span>
-                  <span className="text-lg font-bold text-white">{lastResult.risk_score} / 100</span>
+              {/* Risk & Latency */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="pg-stat-cell rounded-neo text-center">
+                  <span className="pg-stat-label text-center">Risk Score</span>
+                  <span className="pg-stat-value text-ink-primary text-base">
+                    {lastResult.risk_score}<span className="text-ink-muted text-xs"> /100</span>
+                  </span>
                 </div>
-                <div className="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
-                  <span className="text-[10px] text-slate-500 block">LATENCY</span>
-                  <span className="text-lg font-bold text-emerald-400">{lastResult.latency_ms} ms</span>
+                <div className="pg-stat-cell rounded-neo text-center">
+                  <span className="pg-stat-label text-center">Latency</span>
+                  <span className="pg-stat-value text-guard-allow text-base">
+                    {lastResult.latency_ms}<span className="text-ink-muted text-xs"> ms</span>
+                  </span>
                 </div>
               </div>
 
-              {/* Decision Reasons */}
-              <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase block mb-1">Explainable Reasons:</span>
+              {/* Reasons */}
+              <div className="pg-inset p-3 rounded-neo space-y-1.5">
+                <span className="text-[9px] text-ink-muted uppercase tracking-widest block">Explainable Reasons</span>
                 {lastResult.reasons.map((r, i) => (
-                  <div key={i} className="text-[11px] text-slate-200">{r}</div>
+                  <div key={i} className="text-[11px] text-ink-secondary">{r}</div>
                 ))}
               </div>
 
-              {/* Gateway Handoff Button if ALLOW */}
+              {/* Gateway handoff */}
               {lastResult.decision === 'ALLOW' && (
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl space-y-2 text-emerald-400 text-[11px]">
-                  <div className="font-bold flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4" /> Razorpay Test-Mode Gateway Handoff Ready
+                <div className="p-3 bg-guard-allow/8 border border-guard-allow/20 rounded-neo space-y-1 text-guard-allow">
+                  <div className="font-bold flex items-center gap-1.5 text-[11px]">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Razorpay Gateway Handoff Ready
                   </div>
-                  <p>Transaction cleared authorization firewall. Forwarded to gateway API.</p>
+                  <p className="text-[10px] text-guard-allow/70">
+                    Cleared authorization firewall. Forwarded to gateway API.
+                  </p>
                 </div>
               )}
-
             </div>
           )}
 
         </div>
-
       </div>
 
     </div>

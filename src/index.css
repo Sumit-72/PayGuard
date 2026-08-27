@@ -2,69 +2,256 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Base Layer ──────────────────────────────────────────────────────── */
 @layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
-    @apply bg-[#0B0F17] text-slate-100 font-sans overflow-x-hidden;
-    background-image: 
-      radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
-      radial-gradient(at 50% 100%, rgba(139, 92, 246, 0.05) 0px, transparent 50%);
+    @apply bg-surface-base text-ink-primary font-sans overflow-x-hidden;
+    /* Very subtle ambient lighting — barely perceptible, not distracting */
+    background-image:
+      radial-gradient(ellipse 80% 40% at 0% 0%, rgba(79, 110, 247, 0.05) 0px, transparent 60%),
+      radial-gradient(ellipse 60% 30% at 100% 0%, rgba(34, 211, 238, 0.04) 0px, transparent 60%);
     background-attachment: fixed;
+  }
+
+  /* Refined scrollbars */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0f1623; }
+  ::-webkit-scrollbar-thumb {
+    background: #1e2d45;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #243355; }
+
+  /* Text selection */
+  ::selection {
+    @apply bg-brand/30 text-ink-primary;
   }
 }
 
-/* Custom Scrollbars */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #0B0F17;
-}
-::-webkit-scrollbar-thumb {
-  background: #1F2937;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #374151;
+/* ── Component Primitives ────────────────────────────────────────────── */
+@layer components {
+
+  /* ── Surfaces ── */
+
+  /* Main card/panel surface — sits above the base */
+  .pg-surface {
+    @apply bg-surface-raised shadow-neo rounded-neo-lg
+           border border-surface-border/60
+           transition-neo duration-neo;
+  }
+
+  /* Deeper panel — sits above a pg-surface */
+  .pg-surface-overlay {
+    @apply bg-surface-overlay shadow-neo-sm rounded-neo
+           border border-surface-border/40;
+  }
+
+  /* Inset/recessed panel — pressed into surface */
+  .pg-inset {
+    @apply bg-surface-base shadow-neo-inset rounded-neo
+           border border-surface-border/30;
+  }
+
+  /* Code / terminal display block */
+  .pg-code-block {
+    @apply pg-inset font-mono text-xs leading-relaxed
+           overflow-x-auto;
+  }
+
+  /* ── Buttons ── */
+
+  /* Primary action button — raised, tactile */
+  .pg-btn-primary {
+    @apply inline-flex items-center justify-center gap-2
+           px-4 py-2 rounded-neo
+           bg-brand text-white font-semibold text-sm
+           shadow-neo-brand
+           transition-neo duration-neo
+           hover:bg-brand-light hover:shadow-neo
+           active:shadow-neo-pressed active:translate-y-px
+           focus-visible:outline-none focus-visible:shadow-neo-focus
+           disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-neo-flat
+           select-none;
+  }
+
+  /* Secondary / ghost button */
+  .pg-btn-ghost {
+    @apply inline-flex items-center justify-center gap-2
+           px-3 py-1.5 rounded-neo
+           bg-surface-overlay text-ink-secondary font-medium text-sm
+           shadow-neo-sm
+           border border-surface-border/50
+           transition-neo duration-neo
+           hover:text-ink-primary hover:bg-surface-overlay hover:shadow-neo
+           active:shadow-neo-pressed active:translate-y-px
+           focus-visible:outline-none focus-visible:shadow-neo-focus
+           disabled:opacity-40 disabled:cursor-not-allowed
+           select-none;
+  }
+
+  /* Danger / destructive button */
+  .pg-btn-danger {
+    @apply inline-flex items-center justify-center gap-2
+           px-4 py-2 rounded-neo
+           bg-guard-block/90 text-white font-semibold text-sm
+           shadow-neo-block
+           transition-neo duration-neo
+           hover:bg-guard-block hover:shadow-neo
+           active:shadow-neo-pressed active:translate-y-px
+           focus-visible:outline-none focus-visible:shadow-neo-focus
+           disabled:opacity-40 disabled:cursor-not-allowed
+           select-none;
+  }
+
+  /* Success / allow button */
+  .pg-btn-allow {
+    @apply inline-flex items-center justify-center gap-2
+           px-4 py-2 rounded-neo
+           bg-guard-allow/90 text-white font-semibold text-sm
+           shadow-neo-allow
+           transition-neo duration-neo
+           hover:bg-guard-allow hover:shadow-neo
+           active:shadow-neo-pressed active:translate-y-px
+           focus-visible:outline-none focus-visible:shadow-neo-focus
+           disabled:opacity-40 disabled:cursor-not-allowed
+           select-none;
+  }
+
+  /* Warning button (step-up) */
+  .pg-btn-warn {
+    @apply inline-flex items-center justify-center gap-2
+           px-4 py-2 rounded-neo
+           bg-guard-stepup text-surface-base font-bold text-sm
+           shadow-neo-warn
+           transition-neo duration-neo
+           hover:brightness-110 hover:shadow-neo
+           active:shadow-neo-pressed active:translate-y-px
+           focus-visible:outline-none focus-visible:shadow-neo-focus
+           disabled:opacity-40 disabled:cursor-not-allowed
+           select-none;
+  }
+
+  /* Icon-only ghost button (close, reset, etc.) */
+  .pg-btn-icon {
+    @apply inline-flex items-center justify-center
+           w-8 h-8 rounded-neo
+           text-ink-secondary
+           transition-neo duration-neo
+           hover:text-ink-primary hover:bg-surface-overlay
+           active:shadow-neo-pressed active:translate-y-px
+           focus-visible:outline-none focus-visible:shadow-neo-focus
+           select-none;
+  }
+
+  /* ── Form Inputs ── */
+
+  .pg-input {
+    @apply w-full bg-surface-base text-ink-primary font-sans text-sm
+           rounded-neo border border-surface-border/60
+           px-3 py-2
+           shadow-neo-inset-sm
+           placeholder:text-ink-muted
+           transition-neo duration-neo
+           focus:outline-none focus:border-brand/60 focus:shadow-neo-focus
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .pg-input-mono {
+    @apply pg-input font-mono;
+  }
+
+  .pg-textarea {
+    @apply pg-input resize-none leading-relaxed;
+  }
+
+  /* ── Decision Badges ── */
+
+  .pg-badge {
+    @apply inline-flex items-center px-2.5 py-0.5
+           rounded text-[11px] font-bold font-mono
+           border tracking-wide;
+  }
+
+  .pg-badge-allow {
+    @apply pg-badge
+           bg-guard-allow/10 text-guard-allow border-guard-allow/30;
+  }
+
+  .pg-badge-stepup {
+    @apply pg-badge
+           bg-guard-stepup/10 text-guard-stepup border-guard-stepup/30;
+  }
+
+  .pg-badge-review {
+    @apply pg-badge
+           bg-guard-review/10 text-guard-review border-guard-review/30;
+  }
+
+  .pg-badge-block {
+    @apply pg-badge
+           bg-guard-block/10 text-guard-block border-guard-block/30;
+  }
+
+  /* ── Status Pill (small inline label) ── */
+
+  .pg-status-active {
+    @apply px-2 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase
+           bg-guard-allow/10 text-guard-allow border border-guard-allow/25;
+  }
+
+  .pg-status-suspended {
+    @apply px-2 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase
+           bg-guard-block/10 text-guard-block border border-guard-block/25;
+  }
+
+  /* ── Metric Stat Cell ── */
+
+  .pg-stat-cell {
+    @apply pg-inset p-3 space-y-0.5;
+  }
+
+  .pg-stat-label {
+    @apply text-[10px] font-mono font-semibold text-ink-muted uppercase tracking-wider block;
+  }
+
+  .pg-stat-value {
+    @apply text-sm font-bold font-mono text-ink-primary;
+  }
+
+  /* ── Section Header ── */
+
+  .pg-section-header {
+    @apply flex items-center gap-2.5
+           text-base font-bold text-ink-primary tracking-tight;
+  }
+
+  .pg-section-sub {
+    @apply text-xs text-ink-secondary leading-relaxed mt-1;
+  }
+
+  /* ── Divider ── */
+
+  .pg-divider {
+    @apply border-t border-surface-border/50 my-4;
+  }
 }
 
-/* Glassmorphism & Micro-animations */
-.glass-panel {
-  background: rgba(17, 24, 39, 0.7);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
+/* ── Utilities ───────────────────────────────────────────────────────── */
+@layer utilities {
+  /* Prevent layout shift from scrollbar appearing/disappearing */
+  .scrollbar-stable {
+    scrollbar-gutter: stable;
+  }
 
-.glass-card {
-  background: linear-gradient(135deg, rgba(31, 41, 55, 0.5) 0%, rgba(17, 24, 39, 0.6) 100%);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-}
-
-.glass-card:hover {
-  border-color: rgba(99, 102, 241, 0.3);
-}
-
-.decision-allow {
-  @apply bg-emerald-500/10 text-emerald-400 border-emerald-500/30;
-}
-.decision-stepup {
-  @apply bg-amber-500/10 text-amber-400 border-amber-500/30;
-}
-.decision-review {
-  @apply bg-purple-500/10 text-purple-400 border-purple-500/30;
-}
-.decision-block {
-  @apply bg-rose-500/10 text-rose-400 border-rose-500/30;
-}
-
-/* Pulse Glow Keyframes */
-@keyframes pulseGlow {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
-}
-
-.animate-pulse-glow {
-  animation: pulseGlow 3s infinite ease-in-out;
+  /* Subtle text truncation fade for overflow containers */
+  .fade-right {
+    -webkit-mask-image: linear-gradient(to right, black 75%, transparent 100%);
+    mask-image: linear-gradient(to right, black 75%, transparent 100%);
+  }
 }
